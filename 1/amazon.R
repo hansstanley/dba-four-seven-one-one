@@ -263,36 +263,3 @@ G_full.pagerank.100 <- G_full.pagerank.100[
 
 # export as csv
 write.csv(G_full.pagerank.100, "G_full.pagerank.100.csv", row.names = F)
-
-###     PART III: Community Detection     #####
-# igraph makes this pretty easy too
-# There are a few ways to cluster communities, and
-# different algorithms - its a hard problem, so some
-# methods are fast and less accurate, some are more
-# We'll use the cluster_spinglass function for this graph
-# (due to how the algorithm works, cluster_spinglass
-#  only works if we have a single connected component;
-#  if you have multiple components you might try
-#  cluster_fast_greedy instead)
-set.seed(144)
-clust = cluster_spinglass(sg, spins = 100)$membership
-# Now we have a cluster for each node (if you set a
-# different random seed you may have different clusters)
-clust
-table(clust)
-
-# Plot the clusters. We're doing some magic here
-# to try to give everything a mix of shapes and colors
-# You don't need to understand the next lines
-# Here is the version that was used in class for
-# the full graph, where we had more communities
-# color = rep(brewer.pal(12, "Paired"), 8)
-# shape = rep(rep(c("circle", "square", "csquare", "sphere"), each=12), 2)
-# plot(sg, layout=sg_mylayout, vertex.label=NA, vertex.size=3,
-#      vertex.color=color[clust],
-#      vertex.shape=shape[clust])
-# We don't have that many, so we can go simpler
-color = c(brewer.pal(12, "Paired"), "black")
-plot(sg, layout=sg_mylayout, vertex.label=NA, vertex.size=0.2*sqrt(bn),
-     vertex.color=color[clust])
-
