@@ -180,61 +180,70 @@ plot(G, layout=mylayout, vertex.label=NA,
 # How "central" a node is in a network
 # = 1 / sum(shortest path lengths to other nodes)
 # Recall that closeness only works on connected components,
-# so we find the largest connected component in `G_full`
-comp_full = components(G_full)
-comp_full$membership
-# only keep those that are in the largest
-in.max.comp_full = (comp_full$membership == 1)
-G_conn = induced_subgraph(G_full, in.max.comp_full)
-
-G_conn_cl = closeness(G_conn, cutoff = 3)
+# ideally we would use the largest connected component in `G_full`,
+# but `G` is used instead for better performance
+# when running the `closeness` function
+G_conn = induced_subgraph(G, components(G)$membership == 1)
+G_conn_layout = layout_nicely(G_conn)
+G_conn_cl = closeness(G_conn)
 summary(G_conn_cl)
 
-G_sub.closeness <- data.frame(cls=G_conn_cl)
-G_sub.closeness$Id <- row.names(G_sub.closeness)
-G_sub.closeness <- G_sub.closeness[order(G_sub.closeness$cls, decreasing = T),]
-G_sub.closeness.100 <- G_sub.closeness[1:100,]
-G_sub.closeness.100 <- merge(G_sub.closeness.100, nodes_df, by="Id")
-G_sub.closeness.100 <- G_sub.closeness.100[
-  order(G_sub.closeness.100$cls, decreasing = T),
+G_conn.closeness <- data.frame(cls=G_conn_cl)
+G_conn.closeness$Id <- row.names(G_conn.closeness)
+# sort by decreasing closeness to get the top 100
+G_conn.closeness <- G_conn.closeness[order(
+  G_conn.closeness$cls,
+  decreasing = T
+),]
+G_conn.closeness.100 <- G_conn.closeness[1:100,]
+# merge with node metadata and sort again
+G_conn.closeness.100 <- merge(G_conn.closeness.100, nodes_df, by="Id")
+G_conn.closeness.100 <- G_conn.closeness.100[
+  order(G_conn.closeness.100$cls, decreasing = T),
 ]
 # export as csv
-write.csv(G_sub.closeness.100, "G_sub.closeness.100.csv", row.names = F)
+write.csv(G_conn.closeness.100, "G_conn.closeness.100.csv", row.names = F)
 # Basic plot
-plot(sg, layout=sg_mylayout, vertex.label=NA, vertex.size=10000*(sg_cl))
+plot(G_conn, layout=G_conn_layout,
+     vertex.label=NA, vertex.size=10000*(G_conn_cl))
 # Or with colors!
-plot(sg, layout=sg_mylayout, vertex.label=NA, vertex.size=200*sqrt(sg_cl), 
-     vertex.color = get.colors(c("white", "purple"), sg_cl^10))
+plot(G_conn, layout=G_conn_layout, vertex.label=NA,
+     vertex.size=200*sqrt(G_conn_cl), 
+     vertex.color = get.colors(c("white", "purple"), G_conn_cl^10))
 
 # Metric 3: Betweenness Centrality
 # Number of shortest paths in the network in
 # which this node appears
+# Again, `G` is used instead of `G_full` for
+# faster computation over accuracy
 bn = betweenness(G)
 summary(bn)
 
-G_sub.between <- data.frame(btw=betweenness(G))
-G_sub.between$Id <- row.names(G_sub.between)
-G_sub.between <- G_sub.between[order(G_sub.between$btw, decreasing = T),]
-G_sub.between.100 <- G_sub.between[1:100,]
-G_sub.between.100 <- merge(G_sub.between.100, nodes_df, by="Id")
-G_sub.between.100 <- G_sub.between.100[
-  order(G_sub.between.100$btw, decreasing = T),
+G.between <- data.frame(btw=betweenness(G))
+G.between$Id <- row.names(G.between)
+# sort by decreasing betweenness to obtain the top 100
+G.between <- G.between[order(G.between$btw, decreasing = T),]
+G.between.100 <- G.between[1:100,]
+G.between.100 <- merge(G.between.100, nodes_df, by="Id")
+G.between.100 <- G.between.100[
+  order(G.between.100$btw, decreasing = T),
 ]
 # export as csv
-write.csv(G_sub.between.100, "G_sub.between.100.csv", row.names = F)
+write.csv(G.between.100, "G.between.100.csv", row.names = F)
 # Try basic plot:
 plot(G, layout=mylayout, vertex.label=NA, vertex.size=sqrt(bn))
 # Not good! We need to shrink them a bit
 plot(G, layout=mylayout, vertex.label=NA, vertex.size=0.2*sqrt(bn))
 # Really shows the range, but is hard to look at. Try sqrt + color
-plot(sg, layout=mylayout, vertex.label=NA, vertex.size=0.2*sqrt(bn),
+plot(G, layout=mylayout, vertex.label=NA, vertex.size=0.2*sqrt(bn),
      vertex.color = get.colors(c("white", "purple"), bn))
 
 # Metric 4: PageRank
 # The page.rank function returns more than one thing,
 # but what we want is the "$vector" after calling page.rank
+# We use `G` for better performance while plotting,
+# but `G_full` to compute the top 100 nodes by PageRank
 pr = page_rank(G)$vector
-summary(pr)
 # Plot it
 plot(G, layout=mylayout, vertex.label=NA, vertex.size=100*sqrt(pr),
      vertex.color = get.colors(c("white", "purple"), pr^2))
@@ -243,8 +252,10 @@ pr_full = page_rank(G_full)$vector
 summary(pr_full)
 G_full.pagerank <- data.frame(pr=pr_full)
 G_full.pagerank$Id <- row.names(G_full.pagerank)
+# sort by descending PageRank to obtain the top 100
 G_full.pagerank <- G_full.pagerank[order(G_full.pagerank$pr, decreasing = T),]
 G_full.pagerank.100 <- G_full.pagerank[1:100,]
+# merge with the nodes metadata and sort again
 G_full.pagerank.100 <- merge(G_full.pagerank.100, nodes_df, by="Id")
 G_full.pagerank.100 <- G_full.pagerank.100[
   order(G_full.pagerank.100$pr, decreasing = T),
