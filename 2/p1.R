@@ -30,4 +30,5 @@ mod.2 <- lm(AnnualSales ~ Year+Hops+Malt+Advertising+Bitterness, data = sbc.trai
 summary(mod.2)
 get_r_squared(mod.2)
 
-
+cor(sbc.train[,c("AnnualSales", "Year", "Hops", "Malt",
+            "Advertising", "Bitterness", "Investment")])
